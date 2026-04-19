@@ -13,7 +13,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN npx prisma generate && npm run build && mkdir -p .next/standalone/node_modules/.prisma .next/standalone/node_modules/@prisma .next/standalone/node_modules/.bin && cp -R node_modules/.prisma/client .next/standalone/node_modules/.prisma/client && cp -R node_modules/@prisma/client .next/standalone/node_modules/@prisma/client && cp -R node_modules/prisma .next/standalone/node_modules/prisma && cp node_modules/.bin/prisma .next/standalone/node_modules/.bin/prisma
 
 # Stage 3: Production runner
 FROM base AS runner
@@ -30,6 +30,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 # Next.js standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
