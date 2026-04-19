@@ -103,7 +103,8 @@ describe('EmailService - Email Logging', () => {
   it('creates PENDING log for scheduled email', async () => {
     const { emailService } = emailServiceModule
 
-    const futureDate = new Date('2026-03-01T10:00:00Z')
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 1)
     vi.mocked(prisma.emailLog.create).mockResolvedValue({ id: 'email-1' } as any)
 
     const result = await emailService.sendEmail({
@@ -186,9 +187,7 @@ describe('EmailService - getEmailHistory', () => {
 
     await emailService.getEmailHistory({})
 
-    expect(prisma.emailLog.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 100 })
-    )
+    expect(prisma.emailLog.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 100 }))
   })
 
   it('supports date range filters', async () => {
@@ -243,7 +242,7 @@ describe('EmailService - generateEmailHTML', () => {
 
     expect(html).toContain('<!DOCTYPE html>')
     expect(html).toContain('<p>Hello World</p>')
-    expect(html).toContain("Your Dental Clinic")
+    expect(html).toContain('Your Dental Clinic')
     expect(html).toContain('automated email')
   })
 
@@ -296,9 +295,9 @@ describe('EmailService - sendWithTemplate', () => {
       content: 'Test',
     } as any)
 
-    await expect(
-      emailService.sendWithTemplate('test@example.com', 'tpl-1', {})
-    ).rejects.toThrow('Template not found')
+    await expect(emailService.sendWithTemplate('test@example.com', 'tpl-1', {})).rejects.toThrow(
+      'Template not found'
+    )
   })
 
   it('throws for non-email template', async () => {
@@ -311,9 +310,9 @@ describe('EmailService - sendWithTemplate', () => {
       content: 'Test',
     } as any)
 
-    await expect(
-      emailService.sendWithTemplate('test@example.com', 'tpl-1', {})
-    ).rejects.toThrow('not for email')
+    await expect(emailService.sendWithTemplate('test@example.com', 'tpl-1', {})).rejects.toThrow(
+      'not for email'
+    )
   })
 
   it('replaces variables in subject and body', async () => {
