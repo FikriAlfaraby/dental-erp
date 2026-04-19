@@ -3,6 +3,7 @@ import {
   complete,
   streamResponse,
   extractJSON,
+  sanitizeAIOutput,
   type ChatMessage,
 } from '@/lib/ai/openrouter'
 
@@ -86,6 +87,16 @@ describe('extractJSON', () => {
   })
 })
 
+describe('sanitizeAIOutput', () => {
+  it('removes complete think blocks', () => {
+    expect(sanitizeAIOutput('<think>internal</think>Hi there')).toBe('Hi there')
+  })
+
+  it('removes unfinished think blocks', () => {
+    expect(sanitizeAIOutput('<think>internal\nmore')).toBe('')
+  })
+})
+
 // ---------------------------------------------------------------------------
 // complete
 // ---------------------------------------------------------------------------
@@ -93,21 +104,21 @@ describe('extractJSON', () => {
 describe('complete', () => {
   beforeEach(() => {
     vi.mocked(global.fetch).mockReset()
-    process.env.OPENROUTER_API_KEY = 'test-openrouter-api-key'
+    process.env.NVIDIA_API_KEY = 'test-nvidia-api-key'
   })
 
   it('should call fetch with the correct URL', async () => {
     mockFetchSuccess({
       choices: [{ message: { content: 'Test reply' } }],
       usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 },
-      model: 'google/gemini-2.5-pro',
+      model: 'minimaxai/minimax-m2.7',
     })
 
     await complete(sampleMessages)
 
     expect(global.fetch).toHaveBeenCalledOnce()
     const [url] = vi.mocked(global.fetch).mock.calls[0]
-    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions')
+    expect(url).toBe('https://integrate.api.nvidia.com/v1/chat/completions')
   })
 
   it('should send correct headers including Bearer token', async () => {
@@ -121,24 +132,22 @@ describe('complete', () => {
 
     const [, options] = vi.mocked(global.fetch).mock.calls[0]
     const headers = (options as RequestInit).headers as Record<string, string>
-    expect(headers['Authorization']).toBe('Bearer test-openrouter-api-key')
+    expect(headers['Authorization']).toBe('Bearer test-nvidia-api-key')
     expect(headers['Content-Type']).toBe('application/json')
-    expect(headers['X-Title']).toBe('DentalERP AI')
-    expect(headers['HTTP-Referer']).toBe('http://localhost:3000')
   })
 
   it('should use default model, maxTokens, and temperature when no config is provided', async () => {
     mockFetchSuccess({
       choices: [{ message: { content: 'default' } }],
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-      model: 'google/gemini-2.5-pro',
+      model: 'minimaxai/minimax-m2.7',
     })
 
     await complete(sampleMessages)
 
     const [, options] = vi.mocked(global.fetch).mock.calls[0]
     const body = JSON.parse((options as RequestInit).body as string)
-    expect(body.model).toBe('google/gemini-2.5-pro')
+    expect(body.model).toBe('minimaxai/minimax-m2.7')
     expect(body.max_tokens).toBe(4096)
     expect(body.temperature).toBe(0.7)
   })
@@ -147,18 +156,18 @@ describe('complete', () => {
     mockFetchSuccess({
       choices: [{ message: { content: 'custom' } }],
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-      model: 'anthropic/claude-opus-4-5-20251101',
+      model: 'minimaxai/minimax-m2.7',
     })
 
     await complete(sampleMessages, {
-      model: 'anthropic/claude-opus-4-5-20251101',
+      model: 'minimaxai/minimax-m2.7',
       maxTokens: 8192,
       temperature: 0.2,
     })
 
     const [, options] = vi.mocked(global.fetch).mock.calls[0]
     const body = JSON.parse((options as RequestInit).body as string)
-    expect(body.model).toBe('anthropic/claude-opus-4-5-20251101')
+    expect(body.model).toBe('minimaxai/minimax-m2.7')
     expect(body.max_tokens).toBe(8192)
     expect(body.temperature).toBe(0.2)
   })
@@ -194,7 +203,7 @@ describe('complete', () => {
     mockFetchSuccess({
       choices: [{ message: { content: 'A root canal is a dental procedure.' } }],
       usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
-      model: 'google/gemini-2.5-pro',
+      model: 'minimaxai/minimax-m2.7',
     })
 
     const result = await complete(sampleMessages)
@@ -205,7 +214,7 @@ describe('complete', () => {
       completionTokens: 20,
       totalTokens: 30,
     })
-    expect(result.model).toBe('google/gemini-2.5-pro')
+    expect(result.model).toBe('minimaxai/minimax-m2.7')
   })
 
   it('should default content to empty string when choices are missing', async () => {
@@ -259,24 +268,20 @@ describe('complete', () => {
     mockFetchError(500, 'Internal Server Error')
 
     await expect(complete(sampleMessages)).rejects.toThrow(
-      'OpenRouter [500]: Internal Server Error'
+      'AI provider [500]: Internal Server Error'
     )
   })
 
   it('should throw on 429 rate limit response', async () => {
     mockFetchError(429, 'Rate limit exceeded')
 
-    await expect(complete(sampleMessages)).rejects.toThrow(
-      'OpenRouter [429]: Rate limit exceeded'
-    )
+    await expect(complete(sampleMessages)).rejects.toThrow('AI provider [429]: Rate limit exceeded')
   })
 
   it('should throw on 401 unauthorized response', async () => {
     mockFetchError(401, 'Invalid API key')
 
-    await expect(complete(sampleMessages)).rejects.toThrow(
-      'OpenRouter [401]: Invalid API key'
-    )
+    await expect(complete(sampleMessages)).rejects.toThrow('AI provider [401]: Invalid API key')
   })
 
   it('should handle temperature of 0 correctly (not fallback to default)', async () => {
@@ -304,8 +309,8 @@ describe('getHeaders (via complete)', () => {
     vi.mocked(global.fetch).mockReset()
   })
 
-  it('should work when OPENROUTER_API_KEY is set', async () => {
-    process.env.OPENROUTER_API_KEY = 'test-openrouter-api-key'
+  it('should work when NVIDIA_API_KEY is set', async () => {
+    process.env.NVIDIA_API_KEY = 'test-nvidia-api-key'
 
     mockFetchSuccess({
       choices: [{ message: { content: 'ok' } }],
@@ -317,47 +322,23 @@ describe('getHeaders (via complete)', () => {
     await expect(complete(sampleMessages)).resolves.toBeDefined()
   })
 
-  it('should throw when OPENROUTER_API_KEY is not set', async () => {
-    const originalKey = process.env.OPENROUTER_API_KEY
-    delete process.env.OPENROUTER_API_KEY
+  it('should throw when NVIDIA_API_KEY is not set', async () => {
+    const originalKey = process.env.NVIDIA_API_KEY
+    delete process.env.NVIDIA_API_KEY
 
-    await expect(complete(sampleMessages)).rejects.toThrow(
-      'OPENROUTER_API_KEY is not set'
-    )
+    await expect(complete(sampleMessages)).rejects.toThrow('NVIDIA_API_KEY is not set')
 
     // Restore for other tests
-    process.env.OPENROUTER_API_KEY = originalKey
+    process.env.NVIDIA_API_KEY = originalKey
   })
 
-  it('should throw when OPENROUTER_API_KEY is empty string', async () => {
-    const originalKey = process.env.OPENROUTER_API_KEY
-    process.env.OPENROUTER_API_KEY = ''
+  it('should throw when NVIDIA_API_KEY is empty string', async () => {
+    const originalKey = process.env.NVIDIA_API_KEY
+    process.env.NVIDIA_API_KEY = ''
 
-    await expect(complete(sampleMessages)).rejects.toThrow(
-      'OPENROUTER_API_KEY is not set'
-    )
+    await expect(complete(sampleMessages)).rejects.toThrow('NVIDIA_API_KEY is not set')
 
-    process.env.OPENROUTER_API_KEY = originalKey
-  })
-
-  it('should use NEXTAUTH_URL as HTTP-Referer', async () => {
-    process.env.OPENROUTER_API_KEY = 'test-openrouter-api-key'
-    process.env.NEXTAUTH_URL = 'https://my-dental-app.com'
-
-    mockFetchSuccess({
-      choices: [{ message: { content: 'ok' } }],
-      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-      model: 'test',
-    })
-
-    await complete(sampleMessages)
-
-    const [, options] = vi.mocked(global.fetch).mock.calls[0]
-    const headers = (options as RequestInit).headers as Record<string, string>
-    expect(headers['HTTP-Referer']).toBe('https://my-dental-app.com')
-
-    // Restore
-    process.env.NEXTAUTH_URL = 'http://localhost:3000'
+    process.env.NVIDIA_API_KEY = originalKey
   })
 })
 
@@ -368,7 +349,7 @@ describe('getHeaders (via complete)', () => {
 describe('streamResponse', () => {
   beforeEach(() => {
     vi.mocked(global.fetch).mockReset()
-    process.env.OPENROUTER_API_KEY = 'test-openrouter-api-key'
+    process.env.NVIDIA_API_KEY = 'test-nvidia-api-key'
   })
 
   it('should call fetch with stream:true in the body', async () => {
@@ -405,7 +386,7 @@ describe('streamResponse', () => {
     await streamResponse(sampleMessages)
 
     const [url] = vi.mocked(global.fetch).mock.calls[0]
-    expect(url).toBe('https://openrouter.ai/api/v1/chat/completions')
+    expect(url).toBe('https://integrate.api.nvidia.com/v1/chat/completions')
   })
 
   it('should return a Response with text/event-stream Content-Type', async () => {
@@ -444,7 +425,7 @@ describe('streamResponse', () => {
 
     const [, options] = vi.mocked(global.fetch).mock.calls[0]
     const body = JSON.parse((options as RequestInit).body as string)
-    expect(body.model).toBe('google/gemini-2.5-pro')
+    expect(body.model).toBe('minimaxai/minimax-m2.7')
     expect(body.max_tokens).toBe(4096)
     expect(body.temperature).toBe(0.7)
   })
@@ -462,14 +443,14 @@ describe('streamResponse', () => {
     } as unknown as Response)
 
     await streamResponse(sampleMessages, {
-      model: 'anthropic/claude-opus-4-5-20251101',
+      model: 'minimaxai/minimax-m2.7',
       maxTokens: 8192,
       temperature: 0.2,
     })
 
     const [, options] = vi.mocked(global.fetch).mock.calls[0]
     const body = JSON.parse((options as RequestInit).body as string)
-    expect(body.model).toBe('anthropic/claude-opus-4-5-20251101')
+    expect(body.model).toBe('minimaxai/minimax-m2.7')
     expect(body.max_tokens).toBe(8192)
     expect(body.temperature).toBe(0.2)
   })
@@ -482,7 +463,7 @@ describe('streamResponse', () => {
     } as unknown as Response)
 
     await expect(streamResponse(sampleMessages)).rejects.toThrow(
-      'OpenRouter stream [503]: Service Unavailable'
+      'AI provider stream [503]: Service Unavailable'
     )
   })
 
@@ -494,7 +475,7 @@ describe('streamResponse', () => {
     } as unknown as Response)
 
     await expect(streamResponse(sampleMessages)).rejects.toThrow(
-      'OpenRouter stream [500]: Internal Server Error'
+      'AI provider stream [500]: Internal Server Error'
     )
   })
 
@@ -505,7 +486,7 @@ describe('streamResponse', () => {
     } as unknown as Response)
 
     await expect(streamResponse(sampleMessages)).rejects.toThrow(
-      'Empty response body from OpenRouter'
+      'Empty response body from AI provider'
     )
   })
 
@@ -516,7 +497,7 @@ describe('streamResponse', () => {
     } as unknown as Response)
 
     await expect(streamResponse(sampleMessages)).rejects.toThrow(
-      'Empty response body from OpenRouter'
+      'Empty response body from AI provider'
     )
   })
 
@@ -524,8 +505,8 @@ describe('streamResponse', () => {
     const encoder = new TextEncoder()
     const sseChunk = encoder.encode(
       'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n' +
-      'data: {"choices":[{"delta":{"content":" world"}}]}\n\n' +
-      'data: [DONE]\n\n'
+        'data: {"choices":[{"delta":{"content":" world"}}]}\n\n' +
+        'data: [DONE]\n\n'
     )
 
     const readable = new ReadableStream({
@@ -560,9 +541,7 @@ describe('streamResponse', () => {
   it('should skip SSE lines that do not start with "data: "', async () => {
     const encoder = new TextEncoder()
     const sseChunk = encoder.encode(
-      ': comment line\n' +
-      'event: ping\n' +
-      'data: {"choices":[{"delta":{"content":"kept"}}]}\n\n'
+      ': comment line\n' + 'event: ping\n' + 'data: {"choices":[{"delta":{"content":"kept"}}]}\n\n'
     )
 
     const readable = new ReadableStream({
@@ -598,8 +577,8 @@ describe('streamResponse', () => {
     const encoder = new TextEncoder()
     const sseChunk = encoder.encode(
       'data: {"choices":[{"delta":{}}]}\n\n' +
-      'data: {"choices":[{"delta":{"content":"visible"}}]}\n\n' +
-      'data: [DONE]\n\n'
+        'data: {"choices":[{"delta":{"content":"visible"}}]}\n\n' +
+        'data: [DONE]\n\n'
     )
 
     const readable = new ReadableStream({
@@ -637,8 +616,8 @@ describe('streamResponse', () => {
     const encoder = new TextEncoder()
     const sseChunk = encoder.encode(
       'data: {invalid json\n\n' +
-      'data: {"choices":[{"delta":{"content":"after-error"}}]}\n\n' +
-      'data: [DONE]\n\n'
+        'data: {"choices":[{"delta":{"content":"after-error"}}]}\n\n' +
+        'data: [DONE]\n\n'
     )
 
     const readable = new ReadableStream({
@@ -670,14 +649,49 @@ describe('streamResponse', () => {
     expect(fullOutput).not.toContain('invalid json')
   })
 
-  it('should throw when OPENROUTER_API_KEY is not set', async () => {
-    const originalKey = process.env.OPENROUTER_API_KEY
-    delete process.env.OPENROUTER_API_KEY
-
-    await expect(streamResponse(sampleMessages)).rejects.toThrow(
-      'OPENROUTER_API_KEY is not set'
+  it('should strip think blocks from streamed content', async () => {
+    const encoder = new TextEncoder()
+    const sseChunk = encoder.encode(
+      'data: {"choices":[{"delta":{"content":"<think>hidden"}}]}\n\n' +
+        'data: {"choices":[{"delta":{"content":" still hidden</think>Hello"}}]}\n\n' +
+        'data: {"choices":[{"delta":{"content":" there"}}]}\n\n' +
+        'data: [DONE]\n\n'
     )
 
-    process.env.OPENROUTER_API_KEY = originalKey
+    const readable = new ReadableStream({
+      start(controller) {
+        controller.enqueue(sseChunk)
+        controller.close()
+      },
+    })
+
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      body: readable,
+    } as unknown as Response)
+
+    const response = await streamResponse(sampleMessages)
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+
+    let fullOutput = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      fullOutput += decoder.decode(value, { stream: true })
+    }
+
+    expect(fullOutput).toContain('data: {"text":"Hello"}')
+    expect(fullOutput).toContain('data: {"text":" there"}')
+    expect(fullOutput).not.toContain('hidden')
+  })
+
+  it('should throw when NVIDIA_API_KEY is not set', async () => {
+    const originalKey = process.env.NVIDIA_API_KEY
+    delete process.env.NVIDIA_API_KEY
+
+    await expect(streamResponse(sampleMessages)).rejects.toThrow('NVIDIA_API_KEY is not set')
+
+    process.env.NVIDIA_API_KEY = originalKey
   })
 })

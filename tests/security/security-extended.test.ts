@@ -53,8 +53,8 @@ describe('Security — Session Management', () => {
 
     it('configurable session duration', () => {
       const durations = {
-        short: 1 * 60 * 60 * 1000,   // 1 hour
-        default: 24 * 60 * 60 * 1000,  // 24 hours
+        short: 1 * 60 * 60 * 1000, // 1 hour
+        default: 24 * 60 * 60 * 1000, // 24 hours
         extended: 7 * 24 * 60 * 60 * 1000, // 7 days
       }
 
@@ -109,7 +109,7 @@ describe('Security — Brute Force Protection', () => {
       const windowMs = 15 * 60 * 1000
       const lastAttemptTime = Date.now() - windowMs - 1000 // window expired
 
-      const isWindowExpired = (Date.now() - lastAttemptTime) > windowMs
+      const isWindowExpired = Date.now() - lastAttemptTime > windowMs
       expect(isWindowExpired).toBe(true)
     })
 
@@ -242,7 +242,7 @@ describe('Security — Response Headers', () => {
     const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'"
 
     expect(csp).toContain("default-src 'self'")
-    expect(csp).toContain("script-src")
+    expect(csp).toContain('script-src')
   })
 
   it('X-Frame-Options prevents clickjacking', () => {
@@ -288,7 +288,7 @@ describe('Security — API Key Exposure Prevention', () => {
     const serverEnvVars = [
       'DATABASE_URL',
       'NEXTAUTH_SECRET',
-      'OPENROUTER_API_KEY',
+      'NVIDIA_API_KEY',
       'ENCRYPTION_KEY',
       'RAZORPAY_KEY_SECRET',
     ]

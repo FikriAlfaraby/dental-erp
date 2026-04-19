@@ -55,8 +55,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "npx tsc --noEmit --skipLibCheck",
-      "next lint --fix --file"
+      "sh -c 'npx tsc -p tsconfig.json --noEmit --skipLibCheck'",
+      "eslint --fix"
     ],
     "*.{ts,tsx,js,jsx,json,css,md}": [
       "prettier --write --ignore-unknown"
@@ -128,6 +128,7 @@
     "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.4.3",
+    "prettier": "^3.8.3",
     "prisma": "5.22.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

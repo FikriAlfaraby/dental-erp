@@ -40,7 +40,8 @@ vi.mock('next/headers', () => ({
 process.env.DATABASE_URL = 'mysql://test:test@localhost:3306/dental_erp_test'
 process.env.NEXTAUTH_SECRET = 'test-secret-key-for-testing'
 process.env.NEXTAUTH_URL = 'http://localhost:3000'
-process.env.OPENROUTER_API_KEY = 'test-openrouter-api-key'
+process.env.NVIDIA_API_KEY = 'test-nvidia-api-key'
+process.env.AI_MODEL = 'minimaxai/minimax-m2.7'
 process.env.CRON_SECRET = 'test-cron-secret'
 process.env.ENCRYPTION_KEY = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'
 process.env.TZ = 'Asia/Kolkata'
@@ -51,7 +52,7 @@ global.fetch = vi.fn()
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,

@@ -7,6 +7,7 @@ A comprehensive, AI-powered **dental hospital management system** built with Nex
 ## Features
 
 ### Core Modules
+
 - **Patient Management** — Records, medical history, dental charting, document uploads
 - **Appointment Scheduling** — Calendar view, slot management, reminders, no-show prediction
 - **Treatment Plans** — Treatment tracking, procedure catalog, AI-assisted treatment advice
@@ -17,6 +18,7 @@ A comprehensive, AI-powered **dental hospital management system** built with Nex
 - **Staff Management** — Roles & permissions, attendance, doctor schedules
 
 ### Advanced Features
+
 - **AI Skills (16 built-in)** — Treatment advisor, smart scheduler, billing agent, patient intake, inventory forecaster, cashflow forecaster, patient segmentation, claim analyzer, consent generator, dynamic pricing, and more
 - **Patient Portal** — Online booking, medical records access, digital intake forms
 - **Insurance & Claims** — Insurance verification, claim submission, auto-adjudication
@@ -33,19 +35,19 @@ A comprehensive, AI-powered **dental hospital management system** built with Nex
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Next.js 16](https://nextjs.org/) (App Router) |
-| Language | [TypeScript 5](https://www.typescriptlang.org/) |
-| Database | [MySQL 8](https://www.mysql.com/) via [Prisma 5](https://www.prisma.io/) ORM |
-| Auth | [NextAuth v5](https://authjs.dev/) (beta) with credentials provider |
-| UI | [Tailwind CSS 3](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) + [shadcn/ui](https://ui.shadcn.com/) |
-| Charts | [Recharts](https://recharts.org/) |
-| Forms | [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) validation |
-| AI | [OpenRouter](https://openrouter.ai/) (multi-model gateway) |
-| Email | Nodemailer (SMTP) |
-| Testing | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) + [Testing Library](https://testing-library.com/) |
-| CI/CD | GitHub Actions |
+| Layer     | Technology                                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Framework | [Next.js 16](https://nextjs.org/) (App Router)                                                                           |
+| Language  | [TypeScript 5](https://www.typescriptlang.org/)                                                                          |
+| Database  | [MySQL 8](https://www.mysql.com/) via [Prisma 5](https://www.prisma.io/) ORM                                             |
+| Auth      | [NextAuth v5](https://authjs.dev/) (beta) with credentials provider                                                      |
+| UI        | [Tailwind CSS 3](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) + [shadcn/ui](https://ui.shadcn.com/) |
+| Charts    | [Recharts](https://recharts.org/)                                                                                        |
+| Forms     | [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) validation                                     |
+| AI        | [NVIDIA NIM](https://build.nvidia.com/) via OpenAI-compatible API                                                        |
+| Email     | Nodemailer (SMTP)                                                                                                        |
+| Testing   | [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) + [Testing Library](https://testing-library.com/)  |
+| CI/CD     | GitHub Actions                                                                                                           |
 
 ## Prerequisites
 
@@ -108,8 +110,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Default Credentials (after seeding)
 
-| Role | Email | Password |
-|---|---|---|
+| Role        | Email                   | Password    |
+| ----------- | ----------------------- | ----------- |
 | Super Admin | `admin@demo-dental.com` | `Admin@123` |
 
 > **Warning**: Change the default password immediately in production.
@@ -118,16 +120,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 See [`.env.example`](.env.example) for all available variables. Key ones:
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | MySQL connection string |
-| `NEXTAUTH_URL` | Yes | App URL (e.g., `http://localhost:3000`) |
-| `NEXTAUTH_SECRET` | Yes | Random secret for session encryption |
-| `ENCRYPTION_KEY` | Yes | 64-char hex string for AES-256-GCM encryption |
-| `CRON_SECRET` | Yes | Secret for securing cron job endpoints |
-| `OPENROUTER_API_KEY` | No | Required for AI features |
-| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` | No | Required for email features |
-| `SMS_API_KEY` | No | Required for SMS features |
+| Variable                                    | Required | Description                                                         |
+| ------------------------------------------- | -------- | ------------------------------------------------------------------- |
+| `DATABASE_URL`                              | Yes      | MySQL connection string                                             |
+| `NEXTAUTH_URL`                              | Yes      | App URL (e.g., `http://localhost:3000`)                             |
+| `NEXTAUTH_SECRET`                           | Yes      | Random secret for session encryption                                |
+| `ENCRYPTION_KEY`                            | Yes      | 64-char hex string for AES-256-GCM encryption                       |
+| `CRON_SECRET`                               | Yes      | Secret for securing cron job endpoints                              |
+| `NVIDIA_API_KEY`                            | No       | Required for AI features when using the default NVIDIA NIM provider |
+| `AI_BASE_URL` / `AI_API_KEY` / `AI_MODEL`   | No       | Optional overrides for any OpenAI-compatible provider               |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` | No       | Required for email features                                         |
+| `SMS_API_KEY`                               | No       | Required for SMS features                                           |
 
 ## Available Scripts
 
@@ -242,4 +245,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - [Prisma](https://www.prisma.io/) for database ORM
 - [shadcn/ui](https://ui.shadcn.com/) for UI components
 - [Radix UI](https://www.radix-ui.com/) for accessible primitives
-- [OpenRouter](https://openrouter.ai/) for AI model access
+- [NVIDIA NIM](https://build.nvidia.com/) for AI model access
